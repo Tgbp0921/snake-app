@@ -13,7 +13,7 @@ export default function App() {
   const [score, setScore] = React.useState(0);
   const [scoreInfo, setScoreInfo] = React.useState(DEFAULT_SCORE_INFO);
   const [tableWidth, setTableWidth] = React.useState(20);
-  const [tableHeight, setTableHeight] = React.useState(50);
+  const [tableHeight, setTableHeight] = React.useState(24);
   const [speed, setSpeed] = React.useState(10);
   const [transportation, setTransportation] = React.useState(false);
 

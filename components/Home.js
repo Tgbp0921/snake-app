@@ -191,7 +191,7 @@ export default function Home({
           setter: setTableWidth,
           fallback: 20,
           min: 6,
-          max: 40,
+          max: 32,
         })}
         {renderNumberField({
           label: "Table Height",
@@ -199,7 +199,7 @@ export default function Home({
           setter: setTableHeight,
           fallback: 50,
           min: 6,
-          max: 60,
+          max: 32,
         })}
         {renderNumberField({
           label: "Speed",

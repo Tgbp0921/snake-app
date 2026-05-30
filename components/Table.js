@@ -85,8 +85,8 @@ export default function Table({
   setRunning,
 }) {
   const { width, height } = useWindowDimensions();
-  const boardWidth = Math.max(1, tableWidth);
-  const boardHeight = Math.max(1, tableHeight);
+  const boardWidth = Math.min(32, Math.max(6, tableWidth));
+  const boardHeight = Math.min(32, Math.max(6, tableHeight));
   const initialSnake = React.useMemo(
     () => createInitialSnake(boardWidth, boardHeight),
     [boardWidth, boardHeight],
@@ -114,7 +114,7 @@ export default function Table({
     [snake],
   );
   const head = snake[snake.length - 1];
-  const tickDelay = Math.max(80, 620 - speed * 135);
+  const tickDelay = Math.max(130, 620 - speed * 35);
 
   React.useEffect(() => {
     foodRef.current = food;
@@ -295,7 +295,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   cell: {
-    boxSizing: "border-box",
     borderWidth: 0.5,
     borderColor: "rgba(23, 49, 21, 0.18)",
     backgroundColor: "rgba(255, 255, 255, 0.22)",
