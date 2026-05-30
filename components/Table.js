@@ -114,7 +114,7 @@ export default function Table({
     [snake],
   );
   const head = snake[snake.length - 1];
-  const tickDelay = Math.max(130, 620 - speed * 35);
+  const tickDelay = Math.max(130, 420 - speed * 235);
 
   React.useEffect(() => {
     foodRef.current = food;
