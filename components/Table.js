@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View, Text, useWindowDimensions, Pressable } from "react-native";
+import { StyleSheet, View, Text, useWindowDimensions } from "react-native";
 
 const ComponentName = ({
   tableWidth,
@@ -17,11 +17,8 @@ const ComponentName = ({
     [2, 3],
     [3, 3],
   ]);
-  const [food, setFood] = React.useState([5, 5]);
-  const [direction, setDirection] = React.useState("right");
-  const directionRef = React.useRef(direction);
-  const foodRef = React.useRef(food);
-  const touchStartRef = React.useRef(null);
+  const directionRef = React.useRef("right");
+  const foodRef = React.useRef([5, 5]);
   const boardWidth = Math.max(1, tableWidth);
   const boardHeight = Math.max(1, tableHeight);
   const cellSize = Math.max(
@@ -32,7 +29,6 @@ const ComponentName = ({
   );
   const boardPixelWidth = cellSize * boardWidth;
   const boardPixelHeight = cellSize * boardHeight;
-  const boardBorderWidth = 3;
 
   const isSnakeCell = (x, y) =>
     snake.some((segment) => segment[0] === x && segment[1] === y);
@@ -40,63 +36,11 @@ const ComponentName = ({
   const isSnakeHead = (x, y) =>
     snake[snake.length - 1]?.[0] === x && snake[snake.length - 1]?.[1] === y;
 
-  const isFoodCell = (x, y) => food[0] === x && food[1] === y;
-
-  React.useEffect(() => {
-    directionRef.current = direction;
-  }, [direction]);
-
-  React.useEffect(() => {
-    foodRef.current = food;
-  }, [food]);
+  const isFoodCell = (x, y) =>
+    foodRef.current[0] === x && foodRef.current[1] === y;
 
   const isSameCell = (firstCell, secondCell) =>
     firstCell[0] === secondCell[0] && firstCell[1] === secondCell[1];
-
-  const changeDirection = (nextDirection) => {
-    const currentDirection = directionRef.current;
-
-    if (nextDirection === "up" && currentDirection !== "down") {
-      setDirection("up");
-    } else if (nextDirection === "down" && currentDirection !== "up") {
-      setDirection("down");
-    } else if (nextDirection === "left" && currentDirection !== "right") {
-      setDirection("left");
-    } else if (nextDirection === "right" && currentDirection !== "left") {
-      setDirection("right");
-    }
-  };
-
-  const handleTouchStart = (event) => {
-    const touch = event.nativeEvent;
-    touchStartRef.current = {
-      x: touch.pageX,
-      y: touch.pageY,
-    };
-  };
-
-  const handleTouchEnd = (event) => {
-    if (!touchStartRef.current) {
-      return;
-    }
-
-    const touch = event.nativeEvent;
-    const dx = touch.pageX - touchStartRef.current.x;
-    const dy = touch.pageY - touchStartRef.current.y;
-    const minSwipeDistance = 24;
-
-    touchStartRef.current = null;
-
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < minSwipeDistance) {
-      return;
-    }
-
-    if (Math.abs(dx) > Math.abs(dy)) {
-      changeDirection(dx > 0 ? "right" : "left");
-    } else {
-      changeDirection(dy > 0 ? "down" : "up");
-    }
-  };
 
   const getNextHead = (currentHead, currentDirection) => {
     const [x, y] = currentHead;
@@ -137,14 +81,16 @@ const ComponentName = ({
     }
 
     const handleKeyDown = (e) => {
-      if (e.key === "ArrowUp") {
-        changeDirection("up");
-      } else if (e.key === "ArrowDown") {
-        changeDirection("down");
-      } else if (e.key === "ArrowLeft") {
-        changeDirection("left");
-      } else if (e.key === "ArrowRight") {
-        changeDirection("right");
+      const currentDirection = directionRef.current;
+
+      if (e.key === "ArrowUp" && currentDirection !== "down") {
+        directionRef.current = "up";
+      } else if (e.key === "ArrowDown" && currentDirection !== "up") {
+        directionRef.current = "down";
+      } else if (e.key === "ArrowLeft" && currentDirection !== "right") {
+        directionRef.current = "left";
+      } else if (e.key === "ArrowRight" && currentDirection !== "left") {
+        directionRef.current = "right";
       }
     };
 
@@ -155,7 +101,7 @@ const ComponentName = ({
 
   React.useEffect(() => {
     const initialFood = createRandomFood(snake);
-    setFood(initialFood);
+    foodRef.current = initialFood;
   }, []);
 
   React.useEffect(() => {
@@ -187,7 +133,6 @@ const ComponentName = ({
           setScore((prevScore) => prevScore + speed);
           const newFood = createRandomFood(nextSnake);
           foodRef.current = newFood;
-          setFood(newFood);
         }
 
         return nextSnake;
@@ -204,13 +149,10 @@ const ComponentName = ({
         style={[
           styles.board,
           {
-            width: boardPixelWidth + boardBorderWidth * 2,
-            height: boardPixelHeight + boardBorderWidth * 2,
-            borderWidth: boardBorderWidth,
+            width: boardPixelWidth,
+            height: boardPixelHeight,
           },
         ]}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
       >
         {Array.from({ length: boardHeight }).map((_, y) => (
           <View key={`row-${y}`} style={styles.row}>
@@ -232,14 +174,6 @@ const ComponentName = ({
           </View>
         ))}
       </View>
-      <View style={styles.homeButtonWrap}>
-        <Pressable style={styles.homeButton} onPress={() => setRunning(false)}>
-          <View style={styles.homeRoof} />
-          <View style={styles.homeBody}>
-            <View style={styles.homeDoor} />
-          </View>
-        </Pressable>
-      </View>
     </View>
   );
 };
@@ -259,15 +193,15 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   board: {
+    borderWidth: 3,
     borderColor: "#173115",
     backgroundColor: "#d9efca",
-    overflow: "visible",
+    overflow: "hidden",
   },
   row: {
     flexDirection: "row",
   },
   cell: {
-    boxSizing: "border-box",
     borderWidth: 0.5,
     borderColor: "rgba(23, 49, 21, 0.18)",
     backgroundColor: "rgba(255, 255, 255, 0.22)",
@@ -280,46 +214,6 @@ const styles = StyleSheet.create({
   },
   foodCell: {
     backgroundColor: "#d92132",
-  },
-  homeButtonWrap: {
-    marginTop: 18,
-    alignItems: "center",
-  },
-  homeButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: "#173115",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#1f351d",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 9,
-    elevation: 6,
-  },
-  homeRoof: {
-    width: 28,
-    height: 28,
-    borderTopWidth: 5,
-    borderLeftWidth: 5,
-    borderColor: "#f9fff3",
-    transform: [{ rotate: "45deg" }],
-    marginBottom: -17,
-  },
-  homeBody: {
-    width: 28,
-    height: 22,
-    borderWidth: 4,
-    borderTopWidth: 0,
-    borderColor: "#f9fff3",
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-  homeDoor: {
-    width: 7,
-    height: 11,
-    backgroundColor: "#f9fff3",
   },
 });
 
