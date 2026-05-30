@@ -48,7 +48,10 @@ export default function Home({
     inputRange: [0, 1],
     outputRange: ["-7deg", "-13deg"],
   });
-
+  const players = [
+    "Yiğit Alp",
+    "Selin Feyza, Birol, Tuğba, Hira Nur, Banu, İrem, Yaşar, Perihan, Ömer, Nilgün",
+  ];
   React.useEffect(() => {
     const tongueLoop = Animated.loop(
       Animated.sequence([
@@ -246,7 +249,7 @@ export default function Home({
           <Text style={styles.scoreValue}>{maxScore}</Text>
         </Text>{" "}
         <Text style={styles.scoreLabel}>
-          Player: {maxScore % 10 > 5 ? "Yiğit Alp" : "Selin Feyza"}
+          Player: {players[maxScore % players.length]}
         </Text>
       </View>
     </View>
