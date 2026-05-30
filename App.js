@@ -1,10 +1,68 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StatusBar } from "expo-status-bar";
+import { StyleSheet, View } from "react-native";
+import Home from "./components/Home";
+import Table from "./components/Table";
+import React from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function App() {
+  const [asyncData, setAsyncData] = React.useState(null);
+  const [running, setRunning] = React.useState(false);
+  const [tableWidth, setTableWidth] = React.useState(20);
+  const [tableHeight, setTableHeight] = React.useState(50);
+  const [transportation, setTransportation] = React.useState(false);
+  const [speed, setSpeed] = React.useState(10);
+  const [score, setScore] = React.useState(0);
+
+  React.useEffect(() => {
+    const loadScoreInfo = async () => {
+      const defaultScoreInfo = { maxScore: 10, maxScoreUser: "birol" };
+
+      try {
+        const storedScoreInfo = await AsyncStorage.getItem("scoreInfo");
+
+        if (storedScoreInfo) {
+          setAsyncData(JSON.parse(storedScoreInfo));
+          return;
+        }
+
+        await AsyncStorage.setItem(
+          "scoreInfo",
+          JSON.stringify(defaultScoreInfo),
+        );
+        setAsyncData(defaultScoreInfo);
+      } catch (error) {
+        console.log("AsyncStorage error:", error);
+      }
+    };
+
+    loadScoreInfo();
+  }, []);
+
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
+      {running ? (
+        <Table
+          tableWidth={tableWidth}
+          tableHeight={tableHeight}
+          speed={speed}
+          score={score}
+          setScore={setScore}
+          transportation={transportation}
+        />
+      ) : (
+        <Home
+          transportation={transportation}
+          setTransportation={setTransportation}
+          setRunning={setRunning}
+          tableWidth={tableWidth}
+          setTableWidth={setTableWidth}
+          tableHeight={tableHeight}
+          setTableHeight={setTableHeight}
+          speed={speed}
+          setSpeed={setSpeed}
+        />
+      )}
       <StatusBar style="auto" />
     </View>
   );
@@ -13,8 +71,8 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

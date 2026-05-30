@@ -1,0 +1,29 @@
+{
+  "React Native Arrow Function Component with Styles": {
+    "prefix": "rafcs",
+    "body": [
+      "import React from 'react';",
+      "import { StyleSheet, View, Text } from 'react-native';",
+      "",
+      "const ${1:ComponentName} = () => {",
+      "  return (",
+      "    <View style={styles.container}>",
+      "      <Text>${2:Hello world}</Text>",
+      "    </View>",
+      "  );",
+      "};",
+      "",
+      "const styles = StyleSheet.create({",
+      "  container: {",
+      "    flex: 1,",
+      "    alignItems: 'center',",
+      "    justifyContent: 'center',",
+      "    padding: 16,",
+      "  },",
+      "});",
+      "",
+      "export default ${1:ComponentName};"
+    ],
+    "description": "React Native arrow function component with styles"
+  }
+}
