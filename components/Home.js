@@ -19,6 +19,9 @@ const ComponentName = ({
   setSpeed,
   transportation,
   setTransportation,
+  score,
+  maxScore,
+  setScore,
 }) => {
   const { width, height } = useWindowDimensions();
   const tongueAnim = React.useRef(new Animated.Value(0)).current;
@@ -33,7 +36,7 @@ const ComponentName = ({
   };
   const tongueWidth = tongueAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [26, 48],
+    outputRange: [26, 52],
   });
   const headTilt = headAnim.interpolate({
     inputRange: [0, 1],
@@ -121,12 +124,12 @@ const ComponentName = ({
               ]}
             />
             <Animated.View
-            style={[
-              styles.snakeTongueWrap,
-              {
-                width: tongueWidth,
-              },
-            ]}
+              style={[
+                styles.snakeTongueWrap,
+                {
+                  width: tongueWidth,
+                },
+              ]}
             >
               <View style={styles.snakeTongueBase} />
               <View
@@ -221,12 +224,13 @@ const ComponentName = ({
         </View>
 
         <View style={[styles.fieldGroup, { width: contentWidth }]}>
-          <Text style={styles.label}>Transportation</Text>
           <TouchableOpacity
             style={styles.toggleRow}
             activeOpacity={0.82}
             onPress={() => setTransportation(!transportation)}
           >
+            {" "}
+            <Text style={styles.toggleText}>Transportation</Text>
             <View
               style={[
                 styles.toggleTrack,
@@ -240,9 +244,6 @@ const ComponentName = ({
                 ]}
               />
             </View>
-            <Text style={styles.toggleText}>
-              {transportation ? "True" : "False"}
-            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -250,10 +251,25 @@ const ComponentName = ({
       <TouchableOpacity
         style={styles.startButton}
         activeOpacity={0.82}
-        onPress={() => setRunning(true)}
+        onPress={() => {
+          setRunning(true);
+          setScore(0);
+        }}
       >
         <Text style={styles.startButtonText}>Start Game</Text>
       </TouchableOpacity>
+      <View style={styles.scorePanel}>
+        {score ? (
+          <Text style={styles.scoreLine}>
+            <Text style={styles.scoreLabel}>Score: </Text>
+            <Text style={styles.scoreValue}>{score}</Text>
+          </Text>
+        ) : null}
+        <Text style={styles.scoreLine}>
+          <Text style={styles.scoreLabel}>Max Score: </Text>
+          <Text style={styles.scoreValue}>{maxScore}</Text>
+        </Text>
+      </View>
     </View>
   );
 };
@@ -502,6 +518,25 @@ const styles = StyleSheet.create({
   startButtonText: {
     color: "#fff8f0",
     fontSize: 18,
+    fontWeight: "900",
+  },
+  scorePanel: {
+    marginTop: 28,
+    alignItems: "center",
+    gap: 6,
+  },
+  scoreLine: {
+    color: "#173115",
+    textAlign: "center",
+  },
+  scoreLabel: {
+    color: "#2f7a25",
+    fontSize: 24,
+    fontWeight: "900",
+  },
+  scoreValue: {
+    color: "#d92132",
+    fontSize: 20,
     fontWeight: "900",
   },
 });
