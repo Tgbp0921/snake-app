@@ -1,6 +1,7 @@
 import React from "react";
 import {
   PanResponder,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -114,7 +115,7 @@ export default function Table({
     [snake],
   );
   const head = snake[snake.length - 1];
-  const tickDelay = Math.max(130, 420 - speed * 235);
+  const tickDelay = Math.max(65, (420 - speed * 35) / 2);
 
   React.useEffect(() => {
     foodRef.current = food;
@@ -154,7 +155,11 @@ export default function Table({
   );
 
   React.useEffect(() => {
-    if (typeof window === "undefined") {
+    if (
+      Platform.OS !== "web" ||
+      typeof window === "undefined" ||
+      typeof window.addEventListener !== "function"
+    ) {
       return undefined;
     }
 
