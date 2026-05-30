@@ -113,14 +113,7 @@ export default function Home({
     setter(Math.min(max, Math.max(min, value + amount)));
   };
 
-  const renderNumberField = ({
-    label,
-    value,
-    setter,
-    fallback,
-    min,
-    max,
-  }) => (
+  const renderNumberField = ({ label, value, setter, fallback, min, max }) => (
     <View style={[styles.fieldGroup, { width: contentWidth }]}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputRow}>
@@ -166,9 +159,13 @@ export default function Home({
                 { transform: [{ scaleY: blinkAnim }] },
               ]}
             />
-            <Animated.View style={[styles.snakeTongueWrap, { width: tongueWidth }]}>
+            <Animated.View
+              style={[styles.snakeTongueWrap, { width: tongueWidth }]}
+            >
               <View style={styles.snakeTongueBase} />
-              <View style={[styles.snakeTongueFork, styles.snakeTongueForkTop]} />
+              <View
+                style={[styles.snakeTongueFork, styles.snakeTongueForkTop]}
+              />
               <View
                 style={[styles.snakeTongueFork, styles.snakeTongueForkBottom]}
               />
@@ -247,6 +244,9 @@ export default function Home({
         <Text style={styles.scoreLine}>
           <Text style={styles.scoreLabel}>Max Score: </Text>
           <Text style={styles.scoreValue}>{maxScore}</Text>
+        </Text>{" "}
+        <Text style={styles.scoreLabel}>
+          Player: {maxScore % 10 > 5 ? "Yiğit Alp" : "Selin"}
         </Text>
       </View>
     </View>

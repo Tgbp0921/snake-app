@@ -76,6 +76,9 @@ const getNextHead = (head, direction, boardWidth, boardHeight, wraps) => {
   return wraps ? [(x + 1) % boardWidth, y] : [x + 1, y];
 };
 
+const isVerticalDirection = (direction) =>
+  direction === "up" || direction === "down";
+
 export default function Table({
   tableWidth,
   tableHeight,
@@ -135,14 +138,37 @@ export default function Table({
     }
   }, []);
 
+  const changeDirectionByQuadrant = React.useCallback(
+    (x, y) => {
+      const currentDirection = directionRef.current;
+      const isLeftSide = x < width / 2;
+      const isTopSide = y < height / 2;
+
+      if (isVerticalDirection(currentDirection)) {
+        changeDirection(isLeftSide ? "left" : "right");
+      } else {
+        changeDirection(isTopSide ? "up" : "down");
+      }
+    },
+    [changeDirection, height, width],
+  );
+
   const panResponder = React.useMemo(
     () =>
       PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: (_, gestureState) =>
           Math.max(Math.abs(gestureState.dx), Math.abs(gestureState.dy)) >
           MIN_SWIPE_DISTANCE,
         onPanResponderRelease: (_, gestureState) => {
           const { dx, dy } = gestureState;
+
+          if (
+            Math.max(Math.abs(dx), Math.abs(dy)) <= MIN_SWIPE_DISTANCE
+          ) {
+            changeDirectionByQuadrant(gestureState.x0, gestureState.y0);
+            return;
+          }
 
           if (Math.abs(dx) > Math.abs(dy)) {
             changeDirection(dx > 0 ? "right" : "left");
@@ -151,7 +177,7 @@ export default function Table({
           }
         },
       }),
-    [changeDirection],
+    [changeDirection, changeDirectionByQuadrant],
   );
 
   React.useEffect(() => {
