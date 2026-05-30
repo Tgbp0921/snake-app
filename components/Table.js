@@ -261,44 +261,48 @@ export default function Table({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.score}>Score: {score}</Text>
+      <View style={styles.playArea}>
+        <Text style={styles.score}>Score: {score}</Text>
 
-      <View
-        style={[
-          styles.board,
-          {
-            width: boardPixelWidth,
-            height: boardPixelHeight,
-            borderWidth: BOARD_BORDER_WIDTH,
-          },
-        ]}
-        {...panResponder.panHandlers}
-      >
-        {Array.from({ length: boardHeight }).map((_, y) => (
-          <View key={`row-${y}`} style={styles.row}>
-            {Array.from({ length: boardWidth }).map((_, x) => {
-              const key = `${x}:${y}`;
+        <View
+          style={[
+            styles.board,
+            {
+              width: boardPixelWidth,
+              height: boardPixelHeight,
+              borderWidth: BOARD_BORDER_WIDTH,
+            },
+          ]}
+          {...panResponder.panHandlers}
+        >
+          {Array.from({ length: boardHeight }).map((_, y) => (
+            <View key={`row-${y}`} style={styles.row}>
+              {Array.from({ length: boardWidth }).map((_, x) => {
+                const key = `${x}:${y}`;
 
-              return (
-                <Cell
-                  key={key}
-                  size={cellSize}
-                  isSnake={snakeCellSet.has(key)}
-                  isHead={head && head[0] === x && head[1] === y}
-                  isFood={food && food[0] === x && food[1] === y}
-                />
-              );
-            })}
-          </View>
-        ))}
+                return (
+                  <Cell
+                    key={key}
+                    size={cellSize}
+                    isSnake={snakeCellSet.has(key)}
+                    isHead={head && head[0] === x && head[1] === y}
+                    isFood={food && food[0] === x && food[1] === y}
+                  />
+                );
+              })}
+            </View>
+          ))}
+        </View>
       </View>
 
-      <Pressable style={styles.homeButton} onPress={() => setRunning(false)}>
-        <View style={styles.homeRoof} />
-        <View style={styles.homeBody}>
-          <View style={styles.homeDoor} />
-        </View>
-      </Pressable>
+      <View style={styles.bottomBar}>
+        <Pressable style={styles.homeButton} onPress={() => setRunning(false)}>
+          <View style={styles.homeRoof} />
+          <View style={styles.homeBody}>
+            <View style={styles.homeDoor} />
+          </View>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -307,9 +311,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
     backgroundColor: "#eaf7df",
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 10,
+  },
+  playArea: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   score: {
     color: "#173115",
@@ -340,35 +351,40 @@ const styles = StyleSheet.create({
     backgroundColor: "#d92132",
   },
   homeButton: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    marginTop: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#173115",
     alignItems: "center",
     justifyContent: "center",
   },
+  bottomBar: {
+    width: "100%",
+    minHeight: 62,
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
   homeRoof: {
-    width: 28,
-    height: 28,
-    borderTopWidth: 5,
-    borderLeftWidth: 5,
+    width: 22,
+    height: 22,
+    borderTopWidth: 4,
+    borderLeftWidth: 4,
     borderColor: "#f9fff3",
     transform: [{ rotate: "45deg" }],
-    marginBottom: -17,
+    marginBottom: -14,
   },
   homeBody: {
-    width: 28,
-    height: 22,
-    borderWidth: 4,
+    width: 22,
+    height: 18,
+    borderWidth: 3,
     borderTopWidth: 0,
     borderColor: "#f9fff3",
     alignItems: "center",
     justifyContent: "flex-end",
   },
   homeDoor: {
-    width: 7,
-    height: 11,
+    width: 6,
+    height: 9,
     backgroundColor: "#f9fff3",
   },
 });

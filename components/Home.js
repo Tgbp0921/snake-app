@@ -246,7 +246,7 @@ export default function Home({
           <Text style={styles.scoreValue}>{maxScore}</Text>
         </Text>{" "}
         <Text style={styles.scoreLabel}>
-          Player: {maxScore % 10 > 5 ? "Yiğit Alp" : "Selin"}
+          Player: {maxScore % 10 > 5 ? "Yiğit Alp" : "Selin Feyza"}
         </Text>
       </View>
     </View>
