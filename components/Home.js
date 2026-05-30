@@ -1,16 +1,25 @@
 import React from "react";
 import {
+  Animated,
+  Pressable,
   StyleSheet,
-  View,
   Text,
   TextInput,
-  TouchableOpacity,
   useWindowDimensions,
-  Animated,
+  View,
 } from "react-native";
 
-const ComponentName = ({
-  setRunning,
+const clampNumber = (value, fallback, min, max) => {
+  const parsedValue = parseInt(value, 10);
+
+  if (Number.isNaN(parsedValue)) {
+    return fallback;
+  }
+
+  return Math.min(max, Math.max(min, parsedValue));
+};
+
+export default function Home({
   tableWidth,
   setTableWidth,
   tableHeight,
@@ -21,19 +30,16 @@ const ComponentName = ({
   setTransportation,
   score,
   maxScore,
-  setScore,
-}) => {
+  onStart,
+}) {
   const { width, height } = useWindowDimensions();
   const tongueAnim = React.useRef(new Animated.Value(0)).current;
   const blinkAnim = React.useRef(new Animated.Value(1)).current;
   const headAnim = React.useRef(new Animated.Value(0)).current;
 
-  const titleGap = Math.min(width * 0.25, height * 0.08, 56);
-  const contentWidth = Math.min(width * 0.95, width - 24);
+  const contentWidth = Math.min(width * 0.92, 430);
+  const titleGap = Math.min(width * 0.25, height * 0.08, 54);
   const snakeScale = Math.min(width / 380, 1);
-  const updateValue = (setter, value, amount, min = 1) => {
-    setter(Math.max(min, value + amount));
-  };
   const tongueWidth = tongueAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [26, 52],
@@ -66,12 +72,12 @@ const ComponentName = ({
         Animated.timing(blinkAnim, {
           toValue: 0.12,
           duration: 80,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(blinkAnim, {
           toValue: 1,
           duration: 100,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.delay(900),
       ]),
@@ -82,12 +88,12 @@ const ComponentName = ({
         Animated.timing(headAnim, {
           toValue: 1,
           duration: 650,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(headAnim, {
           toValue: 0,
           duration: 650,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ]),
     );
@@ -102,6 +108,43 @@ const ComponentName = ({
       headLoop.stop();
     };
   }, [blinkAnim, headAnim, tongueAnim]);
+
+  const changeValue = (setter, value, amount, min, max) => {
+    setter(Math.min(max, Math.max(min, value + amount)));
+  };
+
+  const renderNumberField = ({
+    label,
+    value,
+    setter,
+    fallback,
+    min,
+    max,
+  }) => (
+    <View style={[styles.fieldGroup, { width: contentWidth }]}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.inputRow}>
+        <Pressable
+          style={styles.stepButton}
+          onPress={() => changeValue(setter, value, -1, min, max)}
+        >
+          <Text style={styles.stepButtonText}>-</Text>
+        </Pressable>
+        <TextInput
+          style={styles.input}
+          keyboardType="numeric"
+          value={String(value)}
+          onChangeText={(text) => setter(clampNumber(text, fallback, min, max))}
+        />
+        <Pressable
+          style={styles.stepButton}
+          onPress={() => changeValue(setter, value, 1, min, max)}
+        >
+          <Text style={styles.stepButtonText}>+</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -123,18 +166,9 @@ const ComponentName = ({
                 { transform: [{ scaleY: blinkAnim }] },
               ]}
             />
-            <Animated.View
-              style={[
-                styles.snakeTongueWrap,
-                {
-                  width: tongueWidth,
-                },
-              ]}
-            >
+            <Animated.View style={[styles.snakeTongueWrap, { width: tongueWidth }]}>
               <View style={styles.snakeTongueBase} />
-              <View
-                style={[styles.snakeTongueFork, styles.snakeTongueForkTop]}
-              />
+              <View style={[styles.snakeTongueFork, styles.snakeTongueForkTop]} />
               <View
                 style={[styles.snakeTongueFork, styles.snakeTongueForkBottom]}
               />
@@ -151,85 +185,36 @@ const ComponentName = ({
       </Text>
 
       <View style={[styles.form, { marginTop: titleGap }]}>
-        <View style={[styles.fieldGroup, { width: contentWidth }]}>
-          <Text style={styles.label}>Table Width</Text>
-          <View style={styles.inputRow}>
-            <TouchableOpacity
-              style={styles.stepButton}
-              onPress={() => updateValue(setTableWidth, tableWidth, -1)}
-            >
-              <Text style={styles.stepButtonText}>-</Text>
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={String(tableWidth)}
-              onChangeText={(text) => setTableWidth(parseInt(text) || 20)}
-            />
-            <TouchableOpacity
-              style={styles.stepButton}
-              onPress={() => updateValue(setTableWidth, tableWidth, 1)}
-            >
-              <Text style={styles.stepButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        {renderNumberField({
+          label: "Table Width",
+          value: tableWidth,
+          setter: setTableWidth,
+          fallback: 20,
+          min: 6,
+          max: 40,
+        })}
+        {renderNumberField({
+          label: "Table Height",
+          value: tableHeight,
+          setter: setTableHeight,
+          fallback: 50,
+          min: 6,
+          max: 60,
+        })}
+        {renderNumberField({
+          label: "Speed",
+          value: speed,
+          setter: setSpeed,
+          fallback: 10,
+          min: 1,
+          max: 15,
+        })}
 
         <View style={[styles.fieldGroup, { width: contentWidth }]}>
-          <Text style={styles.label}>Table Height</Text>
-          <View style={styles.inputRow}>
-            <TouchableOpacity
-              style={styles.stepButton}
-              onPress={() => updateValue(setTableHeight, tableHeight, -1)}
-            >
-              <Text style={styles.stepButtonText}>-</Text>
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={String(tableHeight)}
-              onChangeText={(text) => setTableHeight(parseInt(text) || 50)}
-            />
-            <TouchableOpacity
-              style={styles.stepButton}
-              onPress={() => updateValue(setTableHeight, tableHeight, 1)}
-            >
-              <Text style={styles.stepButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={[styles.fieldGroup, { width: contentWidth }]}>
-          <Text style={styles.label}>Speed</Text>
-          <View style={styles.inputRow}>
-            <TouchableOpacity
-              style={styles.stepButton}
-              onPress={() => updateValue(setSpeed, speed, -1)}
-            >
-              <Text style={styles.stepButtonText}>-</Text>
-            </TouchableOpacity>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={String(speed)}
-              onChangeText={(text) => setSpeed(parseInt(text) || 10)}
-            />
-            <TouchableOpacity
-              style={styles.stepButton}
-              onPress={() => updateValue(setSpeed, speed, 1)}
-            >
-              <Text style={styles.stepButtonText}>+</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={[styles.fieldGroup, { width: contentWidth }]}>
-          <TouchableOpacity
+          <Pressable
             style={styles.toggleRow}
-            activeOpacity={0.82}
             onPress={() => setTransportation(!transportation)}
           >
-            {" "}
             <Text style={styles.toggleText}>Transportation</Text>
             <View
               style={[
@@ -244,22 +229,16 @@ const ComponentName = ({
                 ]}
               />
             </View>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
-      <TouchableOpacity
-        style={styles.startButton}
-        activeOpacity={0.82}
-        onPress={() => {
-          setRunning(true);
-          setScore(0);
-        }}
-      >
+      <Pressable style={styles.startButton} onPress={onStart}>
         <Text style={styles.startButtonText}>Start Game</Text>
-      </TouchableOpacity>
+      </Pressable>
+
       <View style={styles.scorePanel}>
-        {score ? (
+        {score > 0 ? (
           <Text style={styles.scoreLine}>
             <Text style={styles.scoreLabel}>Score: </Text>
             <Text style={styles.scoreValue}>{score}</Text>
@@ -272,7 +251,7 @@ const ComponentName = ({
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -281,7 +260,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#eaf7df",
     overflow: "hidden",
-    paddingHorizontal: 0,
     paddingVertical: 14,
   },
   snakeScene: {
@@ -385,11 +363,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#d92132",
     borderWidth: 3,
     borderColor: "#9f1320",
-    shadowColor: "#7b0f18",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
   },
   appleLeaf: {
     position: "absolute",
@@ -418,7 +391,6 @@ const styles = StyleSheet.create({
   },
   fieldGroup: {
     gap: 6,
-    alignSelf: "center",
   },
   label: {
     color: "#1f351d",
@@ -451,11 +423,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#173115",
-    shadowColor: "#1f351d",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.28,
-    shadowRadius: 8,
-    elevation: 5,
+  },
+  stepButtonText: {
+    color: "#f9fff3",
+    fontSize: 26,
+    fontWeight: "900",
+    lineHeight: 29,
   },
   toggleRow: {
     height: 44,
@@ -467,6 +440,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 12,
+  },
+  toggleText: {
+    color: "#173115",
+    fontSize: 16,
+    fontWeight: "900",
   },
   toggleTrack: {
     width: 58,
@@ -488,17 +466,6 @@ const styles = StyleSheet.create({
   toggleThumbActive: {
     alignSelf: "flex-end",
   },
-  toggleText: {
-    color: "#173115",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  stepButtonText: {
-    color: "#f9fff3",
-    fontSize: 26,
-    fontWeight: "900",
-    lineHeight: 29,
-  },
   startButton: {
     marginTop: 18,
     minWidth: 210,
@@ -509,11 +476,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#d92132",
     borderWidth: 3,
     borderColor: "#9f1320",
-    shadowColor: "#7b0f18",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   startButtonText: {
     color: "#fff8f0",
@@ -540,5 +502,3 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 });
-
-export default ComponentName;

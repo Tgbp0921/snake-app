@@ -1,7 +1,81 @@
 import React from "react";
-import { StyleSheet, View, Text, useWindowDimensions } from "react-native";
+import {
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
-const ComponentName = ({
+const BOARD_BORDER_WIDTH = 3;
+const MIN_SWIPE_DISTANCE = 24;
+
+const Cell = React.memo(function Cell({ size, isSnake, isHead, isFood }) {
+  return (
+    <View
+      style={[
+        styles.cell,
+        { width: size, height: size },
+        isSnake && styles.snakeCell,
+        isHead && styles.snakeHeadCell,
+        isFood && styles.foodCell,
+      ]}
+    />
+  );
+});
+
+const sameCell = (firstCell, secondCell) =>
+  firstCell[0] === secondCell[0] && firstCell[1] === secondCell[1];
+
+const cellKey = ([x, y]) => `${x}:${y}`;
+
+const createInitialSnake = (boardWidth, boardHeight) => {
+  const length = Math.min(4, boardWidth);
+  const y = Math.min(3, boardHeight - 1);
+  const startX = Math.max(0, Math.floor((boardWidth - length) / 2));
+
+  return Array.from({ length }, (_, index) => [startX + index, y]);
+};
+
+const createFood = (boardWidth, boardHeight, snake) => {
+  const snakeCells = new Set(snake.map(cellKey));
+  const emptyCells = [];
+
+  for (let y = 0; y < boardHeight; y += 1) {
+    for (let x = 0; x < boardWidth; x += 1) {
+      if (!snakeCells.has(`${x}:${y}`)) {
+        emptyCells.push([x, y]);
+      }
+    }
+  }
+
+  if (emptyCells.length === 0) {
+    return null;
+  }
+
+  return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+};
+
+const getNextHead = (head, direction, boardWidth, boardHeight, wraps) => {
+  const [x, y] = head;
+
+  if (direction === "up") {
+    return wraps ? [x, (y - 1 + boardHeight) % boardHeight] : [x, y - 1];
+  }
+
+  if (direction === "down") {
+    return wraps ? [x, (y + 1) % boardHeight] : [x, y + 1];
+  }
+
+  if (direction === "left") {
+    return wraps ? [(x - 1 + boardWidth) % boardWidth, y] : [x - 1, y];
+  }
+
+  return wraps ? [(x + 1) % boardWidth, y] : [x + 1, y];
+};
+
+export default function Table({
   tableWidth,
   tableHeight,
   speed,
@@ -9,111 +83,114 @@ const ComponentName = ({
   setScore,
   transportation,
   setRunning,
-}) => {
+}) {
   const { width, height } = useWindowDimensions();
-  const [snake, setSnake] = React.useState([
-    [0, 3],
-    [1, 3],
-    [2, 3],
-    [3, 3],
-  ]);
-  const directionRef = React.useRef("right");
-  const foodRef = React.useRef([5, 5]);
   const boardWidth = Math.max(1, tableWidth);
   const boardHeight = Math.max(1, tableHeight);
+  const initialSnake = React.useMemo(
+    () => createInitialSnake(boardWidth, boardHeight),
+    [boardWidth, boardHeight],
+  );
+  const [snake, setSnake] = React.useState(initialSnake);
+  const [food, setFood] = React.useState(() =>
+    createFood(boardWidth, boardHeight, initialSnake),
+  );
+  const directionRef = React.useRef("right");
+  const foodRef = React.useRef(food);
+
   const cellSize = Math.max(
     6,
     Math.floor(
-      Math.min((width - 32) / boardWidth, (height - 120) / boardHeight),
+      Math.min(
+        (width - 32 - BOARD_BORDER_WIDTH * 2) / boardWidth,
+        (height - 150 - BOARD_BORDER_WIDTH * 2) / boardHeight,
+      ),
     ),
   );
-  const boardPixelWidth = cellSize * boardWidth;
-  const boardPixelHeight = cellSize * boardHeight;
+  const boardPixelWidth = cellSize * boardWidth + BOARD_BORDER_WIDTH * 2;
+  const boardPixelHeight = cellSize * boardHeight + BOARD_BORDER_WIDTH * 2;
+  const snakeCellSet = React.useMemo(
+    () => new Set(snake.map(cellKey)),
+    [snake],
+  );
+  const head = snake[snake.length - 1];
+  const tickDelay = Math.max(80, 620 - speed * 135);
 
-  const isSnakeCell = (x, y) =>
-    snake.some((segment) => segment[0] === x && segment[1] === y);
+  React.useEffect(() => {
+    foodRef.current = food;
+  }, [food]);
 
-  const isSnakeHead = (x, y) =>
-    snake[snake.length - 1]?.[0] === x && snake[snake.length - 1]?.[1] === y;
+  const changeDirection = React.useCallback((nextDirection) => {
+    const currentDirection = directionRef.current;
 
-  const isFoodCell = (x, y) =>
-    foodRef.current[0] === x && foodRef.current[1] === y;
-
-  const isSameCell = (firstCell, secondCell) =>
-    firstCell[0] === secondCell[0] && firstCell[1] === secondCell[1];
-
-  const getNextHead = (currentHead, currentDirection) => {
-    const [x, y] = currentHead;
-
-    if (currentDirection === "up") {
-      return transportation
-        ? [x, (y - 1 + boardHeight) % boardHeight]
-        : [x, y - 1];
+    if (nextDirection === "up" && currentDirection !== "down") {
+      directionRef.current = "up";
+    } else if (nextDirection === "down" && currentDirection !== "up") {
+      directionRef.current = "down";
+    } else if (nextDirection === "left" && currentDirection !== "right") {
+      directionRef.current = "left";
+    } else if (nextDirection === "right" && currentDirection !== "left") {
+      directionRef.current = "right";
     }
+  }, []);
 
-    if (currentDirection === "down") {
-      return transportation ? [x, (y + 1) % boardHeight] : [x, y + 1];
-    }
+  const panResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          Math.max(Math.abs(gestureState.dx), Math.abs(gestureState.dy)) >
+          MIN_SWIPE_DISTANCE,
+        onPanResponderRelease: (_, gestureState) => {
+          const { dx, dy } = gestureState;
 
-    if (currentDirection === "left") {
-      return transportation
-        ? [(x - 1 + boardWidth) % boardWidth, y]
-        : [x - 1, y];
-    }
-
-    return transportation ? [(x + 1) % boardWidth, y] : [x + 1, y];
-  };
-
-  const createRandomFood = (currentSnake = snake) => {
-    const x = Math.floor(Math.random() * tableWidth);
-    const y = Math.floor(Math.random() * tableHeight);
-
-    if (currentSnake.some((segment) => isSameCell(segment, [x, y]))) {
-      return createRandomFood(currentSnake);
-    }
-
-    return [x, y];
-  };
+          if (Math.abs(dx) > Math.abs(dy)) {
+            changeDirection(dx > 0 ? "right" : "left");
+          } else {
+            changeDirection(dy > 0 ? "down" : "up");
+          }
+        },
+      }),
+    [changeDirection],
+  );
 
   React.useEffect(() => {
     if (typeof window === "undefined") {
       return undefined;
     }
 
-    const handleKeyDown = (e) => {
-      const currentDirection = directionRef.current;
-
-      if (e.key === "ArrowUp" && currentDirection !== "down") {
-        directionRef.current = "up";
-      } else if (e.key === "ArrowDown" && currentDirection !== "up") {
-        directionRef.current = "down";
-      } else if (e.key === "ArrowLeft" && currentDirection !== "right") {
-        directionRef.current = "left";
-      } else if (e.key === "ArrowRight" && currentDirection !== "left") {
-        directionRef.current = "right";
+    const handleKeyDown = (event) => {
+      if (event.key === "ArrowUp") {
+        changeDirection("up");
+      } else if (event.key === "ArrowDown") {
+        changeDirection("down");
+      } else if (event.key === "ArrowLeft") {
+        changeDirection("left");
+      } else if (event.key === "ArrowRight") {
+        changeDirection("right");
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
 
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  React.useEffect(() => {
-    const initialFood = createRandomFood(snake);
-    foodRef.current = initialFood;
-  }, []);
+  }, [changeDirection]);
 
   React.useEffect(() => {
     const interval = setInterval(() => {
-      setSnake((prevSnake) => {
-        const currentHead = prevSnake[prevSnake.length - 1];
-        const nextHead = getNextHead(currentHead, directionRef.current);
-        const nextFood = foodRef.current;
-        const ateFood = isSameCell(nextHead, nextFood);
+      setSnake((currentSnake) => {
+        const currentHead = currentSnake[currentSnake.length - 1];
+        const nextHead = getNextHead(
+          currentHead,
+          directionRef.current,
+          boardWidth,
+          boardHeight,
+          transportation,
+        );
+        const currentFood = foodRef.current;
+        const ateFood = currentFood && sameCell(nextHead, currentFood);
         const nextSnake = ateFood
-          ? [...prevSnake, nextHead]
-          : [...prevSnake.slice(1), nextHead];
+          ? [...currentSnake, nextHead]
+          : [...currentSnake.slice(1), nextHead];
         const hitWall =
           !transportation &&
           (nextHead[0] < 0 ||
@@ -122,61 +199,78 @@ const ComponentName = ({
             nextHead[1] >= boardHeight);
         const hitSelf = nextSnake
           .slice(0, -1)
-          .some((segment) => isSameCell(segment, nextHead));
+          .some((segment) => sameCell(segment, nextHead));
 
         if (hitWall || hitSelf) {
           setRunning(false);
-          return prevSnake;
+          return currentSnake;
         }
 
         if (ateFood) {
-          setScore((prevScore) => prevScore + speed);
-          const newFood = createRandomFood(nextSnake);
-          foodRef.current = newFood;
+          setScore((currentScore) => currentScore + speed);
+          const nextFood = createFood(boardWidth, boardHeight, nextSnake);
+          foodRef.current = nextFood;
+          setFood(nextFood);
         }
 
         return nextSnake;
       });
-    }, 500 / speed);
+    }, tickDelay);
 
     return () => clearInterval(interval);
-  }, [boardHeight, boardWidth, speed, transportation]);
+  }, [
+    boardHeight,
+    boardWidth,
+    setRunning,
+    setScore,
+    speed,
+    tickDelay,
+    transportation,
+  ]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.score}>Score: {score}</Text>
+
       <View
         style={[
           styles.board,
           {
             width: boardPixelWidth,
             height: boardPixelHeight,
+            borderWidth: BOARD_BORDER_WIDTH,
           },
         ]}
+        {...panResponder.panHandlers}
       >
         {Array.from({ length: boardHeight }).map((_, y) => (
           <View key={`row-${y}`} style={styles.row}>
-            {Array.from({ length: boardWidth }).map((_, x) => (
-              <View
-                key={`${x}-${y}`}
-                style={[
-                  styles.cell,
-                  {
-                    width: cellSize,
-                    height: cellSize,
-                  },
-                  isSnakeCell(x, y) && styles.snakeCell,
-                  isSnakeHead(x, y) && styles.snakeHeadCell,
-                  isFoodCell(x, y) && styles.foodCell,
-                ]}
-              />
-            ))}
+            {Array.from({ length: boardWidth }).map((_, x) => {
+              const key = `${x}:${y}`;
+
+              return (
+                <Cell
+                  key={key}
+                  size={cellSize}
+                  isSnake={snakeCellSet.has(key)}
+                  isHead={head && head[0] === x && head[1] === y}
+                  isFood={food && food[0] === x && food[1] === y}
+                />
+              );
+            })}
           </View>
         ))}
       </View>
+
+      <Pressable style={styles.homeButton} onPress={() => setRunning(false)}>
+        <View style={styles.homeRoof} />
+        <View style={styles.homeBody}>
+          <View style={styles.homeDoor} />
+        </View>
+      </Pressable>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -193,7 +287,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   board: {
-    borderWidth: 3,
     borderColor: "#173115",
     backgroundColor: "#d9efca",
     overflow: "hidden",
@@ -202,6 +295,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   cell: {
+    boxSizing: "border-box",
     borderWidth: 0.5,
     borderColor: "rgba(23, 49, 21, 0.18)",
     backgroundColor: "rgba(255, 255, 255, 0.22)",
@@ -215,6 +309,36 @@ const styles = StyleSheet.create({
   foodCell: {
     backgroundColor: "#d92132",
   },
+  homeButton: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    marginTop: 18,
+    backgroundColor: "#173115",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  homeRoof: {
+    width: 28,
+    height: 28,
+    borderTopWidth: 5,
+    borderLeftWidth: 5,
+    borderColor: "#f9fff3",
+    transform: [{ rotate: "45deg" }],
+    marginBottom: -17,
+  },
+  homeBody: {
+    width: 28,
+    height: 22,
+    borderWidth: 4,
+    borderTopWidth: 0,
+    borderColor: "#f9fff3",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  homeDoor: {
+    width: 7,
+    height: 11,
+    backgroundColor: "#f9fff3",
+  },
 });
-
-export default ComponentName;

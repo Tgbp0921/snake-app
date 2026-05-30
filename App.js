@@ -1,53 +1,61 @@
-import { StatusBar } from "expo-status-bar";
+import React from "react";
 import { StyleSheet, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Home from "./components/Home";
 import Table from "./components/Table";
-import React, { useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const SCORE_INFO_KEY = "scoreInfo";
+const DEFAULT_SCORE_INFO = { maxScore: 10, maxScoreUser: "birol" };
 
 export default function App() {
-  const [asyncData, setAsyncData] = React.useState(null);
   const [running, setRunning] = React.useState(false);
+  const [score, setScore] = React.useState(0);
+  const [scoreInfo, setScoreInfo] = React.useState(DEFAULT_SCORE_INFO);
   const [tableWidth, setTableWidth] = React.useState(20);
   const [tableHeight, setTableHeight] = React.useState(50);
-  const [transportation, setTransportation] = React.useState(false);
   const [speed, setSpeed] = React.useState(10);
-  const [score, setScore] = React.useState(0);
+  const [transportation, setTransportation] = React.useState(false);
 
   React.useEffect(() => {
     const loadScoreInfo = async () => {
-      const defaultScoreInfo = { maxScore: 10 };
-
       try {
-        const storedScoreInfo = await AsyncStorage.getItem("scoreInfo");
+        const savedScoreInfo = await AsyncStorage.getItem(SCORE_INFO_KEY);
 
-        if (storedScoreInfo) {
-          setAsyncData(JSON.parse(storedScoreInfo));
+        if (savedScoreInfo) {
+          setScoreInfo(JSON.parse(savedScoreInfo));
           return;
         }
 
         await AsyncStorage.setItem(
-          "scoreInfo",
-          JSON.stringify(defaultScoreInfo),
+          SCORE_INFO_KEY,
+          JSON.stringify(DEFAULT_SCORE_INFO),
         );
-        setAsyncData(defaultScoreInfo);
       } catch (error) {
-        console.log("AsyncStorage error:", error);
+        console.log("AsyncStorage load error:", error);
       }
     };
 
     loadScoreInfo();
   }, []);
 
-  useEffect(() => {
-    if (score > asyncData?.maxScore) {
-      const newScoreInfo = { maxScore: score };
-      setAsyncData(newScoreInfo);
-      AsyncStorage.setItem("scoreInfo", JSON.stringify(newScoreInfo)).catch(
-        (error) => console.log("AsyncStorage error:", error),
-      );
+  React.useEffect(() => {
+    if (score <= scoreInfo.maxScore) {
+      return;
     }
-  }, [running]);
+
+    const nextScoreInfo = { ...scoreInfo, maxScore: score };
+    setScoreInfo(nextScoreInfo);
+
+    AsyncStorage.setItem(SCORE_INFO_KEY, JSON.stringify(nextScoreInfo)).catch(
+      (error) => console.log("AsyncStorage save error:", error),
+    );
+  }, [score, scoreInfo]);
+
+  const startGame = () => {
+    setScore(0);
+    setRunning(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -63,20 +71,17 @@ export default function App() {
         />
       ) : (
         <Home
-          transportation={transportation}
-          setTransportation={setTransportation}
-          setRunning={setRunning}
           tableWidth={tableWidth}
           setTableWidth={setTableWidth}
           tableHeight={tableHeight}
           setTableHeight={setTableHeight}
           speed={speed}
           setSpeed={setSpeed}
-          running={running}
-          asyncData={asyncData}
+          transportation={transportation}
+          setTransportation={setTransportation}
           score={score}
-          maxScore={asyncData?.maxScore}
-          setScore={setScore}
+          maxScore={scoreInfo.maxScore}
+          onStart={startGame}
         />
       )}
       <StatusBar style="auto" />
@@ -87,8 +92,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "#eaf7df",
   },
 });
