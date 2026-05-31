@@ -50,7 +50,16 @@ export default function Home({
   });
   const players = [
     "Yiğit Alp",
-    "Selin Feyza, Birol, Tuğba, Hira Nur, Banu, İrem, Yaşar, Perihan, Ömer, Nilgün",
+    "Selin Feyza",
+    "Birol",
+    "Tuğba",
+    "Hira Nur",
+    "Banu",
+    "İrem",
+    "Yaşar",
+    "Perihan",
+    "Ömer",
+    "Nilgün",
   ];
   React.useEffect(() => {
     const tongueLoop = Animated.loop(
