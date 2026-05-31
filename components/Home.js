@@ -389,12 +389,13 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "#173115",
-    fontSize: 42,
+    fontSize: 30,
     fontWeight: "900",
     textAlign: "center",
     textShadowColor: "rgba(21, 54, 14, 0.3)",
     textShadowOffset: { width: 0, height: 5 },
     textShadowRadius: 8,
+    marginTop: 92,
   },
   form: {
     width: "100%",
